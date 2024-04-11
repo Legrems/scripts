@@ -51,10 +51,14 @@ else:
     else:
         active_session = srv.sessions[0]
 
-window = active_session.new_window(f"ssh-multig {','.join(servers)}", window_shell=f"ssh {servers[0]}")
+window_name = f"ssh-multig {selected_group.replace(' ', '_')}"
+if windows := active_session.windows.filter(name=window_name):
+    windows[0].select()
+    sys.exit(0)
+
+window = active_session.new_window(window_name, window_shell=f"ssh {servers[0]}")
 
 for server in servers[1:]:
-    window.select_layout("tiled")
     pane = window.split(shell=f"ssh {server}")
 
 # Wait until tmux finished working
@@ -75,6 +79,5 @@ for command in extra_commands:
     pane.send_keys(command)
 
 window.set_window_option("synchronize-panes", "off")
-
 window.select()
-srv.cmd("select-layout", "tiled")
+window.select_layout("tiled")
