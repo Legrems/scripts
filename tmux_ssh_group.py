@@ -60,6 +60,8 @@ window = active_session.new_window(window_name, window_shell=f"ssh {servers[0]}"
 
 for server in servers[1:]:
     pane = window.split(shell=f"ssh {server}")
+    # Select tiled layout each time, to ensure enough space
+    window.select_layout("tiled")
 
 # Wait until tmux finished working
 time.sleep(0.1)
