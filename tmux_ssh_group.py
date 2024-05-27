@@ -14,6 +14,8 @@ BASE_PATH = Path("~/.ssh-tmux/").expanduser()
 configs = {}
 sections = {}
 for subconffile in os.listdir(BASE_PATH):
+    if not subconffile.endswith(".ini"):
+        continue
     config = configparser.ConfigParser()
     config.read(BASE_PATH / subconffile)
 
@@ -24,7 +26,11 @@ for subconffile in os.listdir(BASE_PATH):
 
 
 fzf = FzfPrompt()
-selected_group = fzf.prompt(sections.keys(), "--cycle")[0]
+selections = fzf.prompt(sections.keys(), "--cycle")
+if not selections:
+    sys.exit(0)
+
+selected_group = selections[0]
 
 config = configs[sections[selected_group]]
 
