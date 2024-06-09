@@ -15,7 +15,7 @@ folders = [
 ]
 
 available_folders = sh.find(*[Path(f).expanduser() for f in folders] + "-mindepth 1 -maxdepth 1 -type d".split(" ")).strip().split("\n")
-selected = fzf.prompt(available_folders, "--cycle")
+selected = fzf.prompt(["Select a folder to create or switch session to"] + available_folders, "--cycle --header-lines 1")
 
 if not selected:
     sys.exit(1)

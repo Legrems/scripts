@@ -2,17 +2,29 @@ import configparser
 import sys
 import time
 import libtmux
+import argparse
 
 from pathlib import Path
 from pyfzf.pyfzf import FzfPrompt
 
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--servers-file", "-f", help="Servers file to connect to")
+parser_args = parser.parse_args()
+
+if parser_args.servers_file:
+    with open(parser_args.servers_file, "r") as file:
+        data = file.read()
+
+    servers = []
+    for line in data.strip().split("\n"):
+        servers.append(line.strip())
 
 config = configparser.ConfigParser()
 config_path = Path("~/.ssh-tmux-multi.ini").expanduser()
 config.read(config_path)
 
 fav_key = "Favourite servers"
-
 fzf = FzfPrompt()
 
 
@@ -73,7 +85,8 @@ def write_choosen_servers(servers):
     with open(config_path, "w") as file:
         config.write(file)
 
-servers = fzf.prompt(get_favourite_servers_first(), "--cycle --multi --print-query")
+if not parser_args.servers_file:
+    servers = fzf.prompt(["Select server to connect to"] + get_favourite_servers_first(), "--cycle --multi --print-query --header-lines 1")
 
 # Strip from query if found else, use the query
 if len(servers) > 1:
