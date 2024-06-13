@@ -1,10 +1,17 @@
 import libtmux
 import sys
 import sh
+import argparse
+from pprint import pprint
 from collections import defaultdict
 
 
 from pyfzf.pyfzf import FzfPrompt
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--no-open", action="store_true", help="Do not open tmux window. Mostly for debugging")
+parser_args = parser.parse_args()
+
 
 # Get active tmux sessions
 srv = libtmux.Server()
@@ -14,7 +21,7 @@ commands = defaultdict(list)
 
 all_tty = [p.pane_tty for p in srv.panes]
 
-cmd = f"-t {' -t '.join(all_tty)} -o pid:10 -o tty:10 -o command -ww"
+cmd = f"-t {' -t '.join(all_tty)} -o pid:10 -o tty:10 -o command -ww -f"
 
 sh_commands = sh.ps(cmd.split(' ')).stdout.decode().strip().split("\n")
 
@@ -25,9 +32,12 @@ for cmd in sh_commands[1:]:
     command = cmd[20:].strip()
     tty_number = int(tty.replace("pts/", ""))
 
+    if command in ["-zsh", "/bin/zsh"]:
+        continue
+
     commands[tty_number].append(
         {
-            "pid": pid,
+            "pid": int(pid),
             "command": command,
         }
     )
@@ -37,18 +47,20 @@ def format_pane(pane):
     global commands
 
     tty_number = int(pane.pane_tty.replace("/dev/pts/", ""))
-    running_commands = commands[tty_number]
+    running_commands = sorted(commands[tty_number], key=lambda c: c["pid"])
 
-    if len(running_commands) == 2:
-        cmd = running_commands[-1]
+    if len(running_commands) >= 1:
+        cmd = running_commands[0]
 
     else:
-        cmd = {"pid": "-", "command": "-"}
+        cmd = {"pid": "-", "command": "*command not found*"}
 
-    return f"{pane.pane_tty}: [Sess:{pane.session_name}, Win:{pane.window_name}] (cwd:{pane.pane_current_path}): {cmd['command']}"
+    return [f"{pane.pane_tty}: [Sess:{pane.session_name}, Win:{pane.window_name}] (cwd:{pane.pane_current_path.replace('/home/legrems/', '~/')}): {cmd['command']}"]
 
 
-panes = [format_pane(pane) for pane in srv.panes]
+panes = []
+for pane in srv.panes:
+    panes.extend(format_pane(pane))
 selections = fzf.prompt(["Select one pane you want to switch to"] + panes, "--cycle --header-lines 1")
 
 if not selections:
@@ -59,11 +71,18 @@ tty = pane_name.split(":")[0]
 
 selected_pane = srv.panes.get(pane_tty=tty)
 
-# Go to this session
-selected_pane.session.switch_client()
+if parser_args.no_open:
+    print(selected_pane)
+    print(tty)
+    tty_number = int(tty.replace("/dev/pts/", ""))
+    pprint(commands[tty_number])
 
-# Select the correct window
-selected_pane.window.select()
+else:
+    # Go to this session
+    selected_pane.session.switch_client()
 
-# And switch to this pane
-selected_pane.window.select_pane(selected_pane.pane_id)
+    # Select the correct window
+    selected_pane.window.select()
+
+    # And switch to this pane
+    selected_pane.window.select_pane(selected_pane.pane_id)
