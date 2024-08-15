@@ -12,6 +12,7 @@ folders = [
     "~/Documents/PolyLAN/",
     "~/Documents/Python/",
     "~/Documents/",
+    "~/Documents/Games/Minecraft/modded/",
 ]
 
 available_folders = sh.find(*[Path(f).expanduser() for f in folders] + "-mindepth 1 -maxdepth 1 -type d".split(" ")).strip().split("\n")

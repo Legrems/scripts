@@ -106,7 +106,7 @@ for selected_group in selections:
     if not servers:
         continue
 
-    window_name = get_window_name(info["section"])
+    window_name = get_window_name(selected_group)
     if windows := active_session.windows.filter(name=window_name):
         windows[0].select()
         continue
