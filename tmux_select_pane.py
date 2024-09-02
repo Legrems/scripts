@@ -21,7 +21,7 @@ commands = defaultdict(list)
 
 all_tty = [p.pane_tty for p in srv.panes]
 
-cmd = f"-t {' -t '.join(all_tty)} -o pid:10 -o tty:10 -o command -ww -f"
+cmd = f"-t {' -t '.join(all_tty)} -o pid:10 -o tty:10 -o command -ww" # -f
 
 sh_commands = sh.ps(cmd.split(' ')).stdout.decode().strip().split("\n")
 
@@ -55,7 +55,10 @@ def format_pane(pane):
     else:
         cmd = {"pid": "-", "command": "*command not found*"}
 
-    return [f"{pane.pane_tty}: [Sess:{pane.session_name}, Win:{pane.window_name}] (cwd:{pane.pane_current_path.replace('/home/legrems/', '~/')}): {cmd['command']}"]
+    path = pane.pane_current_path.replace("/home/legrems/Documents/Arcanite", "~/D/A")
+    path = path.replace("/home/legrems/Documents", "~/D")
+    path = path.replace("/home/legrems", "~")
+    return [f"{pane.pane_tty}: [{pane.session_name}: {pane.window_name}, {path}]: {cmd['command']}"]
 
 
 panes = []
