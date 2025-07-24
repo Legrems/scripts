@@ -1,24 +1,32 @@
-import libtmux
-import configparser
 import argparse
-import time
-import sys
+import configparser
 import os
-
-
+import sys
+import time
 from pathlib import Path
+
+import libtmux
 from pyfzf.pyfzf import FzfPrompt
 
-
 parser = argparse.ArgumentParser()
-parser.add_argument("--no-open", action="store_true", help="Do not open tmux window. Mostly for debugging")
-parser.add_argument("--separate-sessions", "-s", action="store_true", help="Use a separate sessions for all of the groups")
+parser.add_argument(
+    "--no-open",
+    action="store_true",
+    help="Do not open tmux window. Mostly for debugging",
+)
+parser.add_argument(
+    "--separate-sessions",
+    "-s",
+    action="store_true",
+    help="Use a separate sessions for all of the groups",
+)
 parser_args = parser.parse_args()
 
 
 def get_window_name(session_name):
     name = session_name.replace("-", "").replace("  ", " ").replace(" ", "_")
     return f"{'' if parser_args.separate_sessions else 'ssh-multig '}{name}"
+
 
 BASE_PATH = Path("~/.ssh-tmux/").expanduser()
 
@@ -42,7 +50,10 @@ for subconffile in os.listdir(BASE_PATH):
         }
 
 fzf = FzfPrompt()
-selections = fzf.prompt(["Select one or more servers group to open"] + list(sections.keys()), "--cycle --multi --header-lines 1")
+selections = fzf.prompt(
+    ["Select one or more servers group to open"] + list(sections.keys()),
+    "--cycle --multi --header-lines 1 --tmux center",
+)
 
 if not selections:
     sys.exit(0)
@@ -62,7 +73,13 @@ if parser_args.separate_sessions:
 
 else:
     if len(active_sessions) > 1:
-        session_choice = fzf.prompt(["You have multiple active tmux sessions open. Choose one to create the window on"] + [sess.name for sess in active_sessions], "--cycle --header-lines 1")
+        session_choice = fzf.prompt(
+            [
+                "You have multiple active tmux sessions open. Choose one to create the window on"
+            ]
+            + [sess.name for sess in active_sessions],
+            "--cycle --header-lines 1",
+        )
 
         if not session_choice:
             sys.exit(0)
@@ -122,7 +139,9 @@ for selected_group in selections:
     time.sleep(0.05)
 
     # Confirm connection on asking panes
-    confirmation_needed_text = "Are you sure you want to continue connecting (yes/no/[fingerprint])?"
+    confirmation_needed_text = (
+        "Are you sure you want to continue connecting (yes/no/[fingerprint])?"
+    )
     for pane in window.panes:
         pane_content = pane.capture_pane()
         if pane_content and confirmation_needed_text == pane_content[-1]:

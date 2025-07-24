@@ -1,15 +1,18 @@
-import libtmux
-import sys
-import sh
 import argparse
-from pprint import pprint
+import sys
 from collections import defaultdict
+from pprint import pprint
 
-
+import libtmux
+import sh
 from pyfzf.pyfzf import FzfPrompt
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--no-open", action="store_true", help="Do not open tmux window. Mostly for debugging")
+parser.add_argument(
+    "--no-open",
+    action="store_true",
+    help="Do not open tmux window. Mostly for debugging",
+)
 parser_args = parser.parse_args()
 
 
@@ -21,9 +24,9 @@ commands = defaultdict(list)
 
 all_tty = [p.pane_tty for p in srv.panes]
 
-cmd = f"-t {' -t '.join(all_tty)} -o pid:10 -o tty:10 -o command -ww" # -f
+cmd = f"-t {' -t '.join(all_tty)} -o pid:10 -o tty:10 -o command -ww"  # -f
 
-sh_commands = sh.ps(cmd.split(' ')).stdout.decode().strip().split("\n")
+sh_commands = sh.ps(cmd.split(" ")).stdout.decode().strip().split("\n")
 
 # Ignore first lines (i.e: table headers)
 for cmd in sh_commands[1:]:
@@ -58,13 +61,18 @@ def format_pane(pane):
     path = pane.pane_current_path.replace("/home/legrems/Documents/Arcanite", "~/D/A")
     path = path.replace("/home/legrems/Documents", "~/D")
     path = path.replace("/home/legrems", "~")
-    return [f"{pane.pane_tty}: [{pane.session_name}: {pane.window_name}, {path}]: {cmd['command']}"]
+    return [
+        f"{pane.pane_tty}: [{pane.session_name}: {pane.window_name}, {path}]: {cmd['command']}"
+    ]
 
 
 panes = []
 for pane in srv.panes:
     panes.extend(format_pane(pane))
-selections = fzf.prompt(["Select one pane you want to switch to"] + panes, "--cycle --header-lines 1")
+selections = fzf.prompt(
+    ["Select one pane you want to switch to"] + panes,
+    "--cycle --header-lines 1 --tmux center",
+)
 
 if not selections:
     sys.exit(0)

@@ -1,9 +1,8 @@
+import sys
+from pathlib import Path
+
 import libtmux
 import sh
-import sys
-
-
-from pathlib import Path
 from pyfzf.pyfzf import FzfPrompt
 
 fzf = FzfPrompt()
@@ -15,8 +14,18 @@ folders = [
     "~/Documents/Games/Minecraft/modded/",
 ]
 
-available_folders = sh.find(*[Path(f).expanduser() for f in folders] + "-mindepth 1 -maxdepth 1 -type d".split(" ")).strip().split("\n")
-selected = fzf.prompt(["Select a folder to create or switch session to"] + available_folders, "--cycle --header-lines 1")
+available_folders = (
+    sh.find(
+        *[Path(f).expanduser() for f in folders]
+        + "-mindepth 1 -maxdepth 1 -type d".split(" ")
+    )
+    .strip()
+    .split("\n")
+)
+selected = fzf.prompt(
+    ["Select a folder to create or switch session to"] + available_folders,
+    "--cycle --header-lines 1 --tmux center",
+)
 
 if not selected:
     sys.exit(1)

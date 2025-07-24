@@ -1,12 +1,11 @@
+import argparse
 import configparser
 import sys
 import time
-import libtmux
-import argparse
-
 from pathlib import Path
-from pyfzf.pyfzf import FzfPrompt
 
+import libtmux
+from pyfzf.pyfzf import FzfPrompt
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--servers-file", "-f", help="Servers file to connect to")
@@ -39,7 +38,9 @@ def get_all_known_ssh_hosts():
         servers.add(line.split(" ")[0])
 
     # Check previous ssh command on histfile
-    with open(Path("~/.histfile").expanduser(), "r", encoding="utf-8", errors="ignore") as file:
+    with open(
+        Path("~/.histfile").expanduser(), "r", encoding="utf-8", errors="ignore"
+    ) as file:
         lines = file.read().strip().split("\n")
 
     for line in lines:
@@ -59,14 +60,16 @@ def get_favourite_servers_first():
 
     order = {}
     for server in servers:
-        order[server] = '0'
+        order[server] = "0"
 
     for server, uses in config[fav_key].items():
         if server in order:
             order[server] = uses
 
     # Return the most used servers first
-    return [x[0] for x in sorted(order.items(), key=lambda x: int(x[1]), reverse=True)]
+    for count, value in order.items():
+        print(count, value)
+    return [x[0] for x in sorted(order.items(), key=lambda x: x[1], reverse=True)]
 
 
 def write_choosen_servers(servers):
@@ -80,13 +83,17 @@ def write_choosen_servers(servers):
             config[fav_key][server] = str(int(config[fav_key][server]) + 1)
 
         else:
-            config[fav_key][server] = '1'
+            config[fav_key][server] = "1"
 
     with open(config_path, "w") as file:
         config.write(file)
 
+
 if not parser_args.servers_file:
-    servers = fzf.prompt(["Select server to connect to"] + get_favourite_servers_first(), "--cycle --multi --print-query --header-lines 1")
+    servers = fzf.prompt(
+        ["Select server to connect to"] + get_favourite_servers_first(),
+        "--cycle --multi --print-query --header-lines 1 --tmux center",
+    )
 
 # Strip from query if found else, use the query
 if len(servers) > 1:
@@ -98,8 +105,10 @@ if not servers:
 write_choosen_servers(servers)
 
 srv = libtmux.Server()
-active_session = srv.sessions.filter(session_attached='1')[0]
-window = active_session.new_window(f"ssh-multis {','.join(servers)}", window_shell=f"ssh {servers[0]}")
+active_session = srv.sessions.filter(session_attached="1")[0]
+window = active_session.new_window(
+    f"ssh-multis {','.join(servers)}", window_shell=f"ssh {servers[0]}"
+)
 
 for server in servers[1:]:
     window.select_layout("tiled")
@@ -109,7 +118,9 @@ for server in servers[1:]:
 time.sleep(0.1)
 
 # Confirm connection on asking panes
-confirmation_needed_text = "Are you sure you want to continue connecting (yes/no/[fingerprint])?"
+confirmation_needed_text = (
+    "Are you sure you want to continue connecting (yes/no/[fingerprint])?"
+)
 for pane in window.panes:
     pane_content = pane.capture_pane()
     if pane_content and confirmation_needed_text == pane_content[-1]:
