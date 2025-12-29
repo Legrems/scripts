@@ -10,6 +10,7 @@ folders = [
     "~/Documents/Arcanite/",
     "~/Documents/PolyLAN/",
     "~/Documents/Python/",
+    "~/Documents/Typescript/",
     "~/Documents/",
     "~/Documents/Games/Minecraft/modded/",
 ]
